@@ -1,8 +1,6 @@
 import os
 from setuptools import setup
 
-long_description = open('README.md').read()
-
 setup(
     name="mcd_changelog",
     version="0.2.0",

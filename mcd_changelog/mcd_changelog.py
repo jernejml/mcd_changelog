@@ -37,8 +37,17 @@ class Releases:
     def get_count(self):
         return self.count
 
+    def get_chain_releases(self, chain='mainnet'):
+        if chain not in chains:
+            raise Exception("Unknown chain. Try 'print(list_branches())'")
+        return [r for r in self.releases if r.chain == chain]
+
 
 all_releases = Releases()
+
+
+def list_branches():
+    return chains
 
 
 def fetch():
@@ -94,8 +103,6 @@ def verify_string_format(strings):
 def main():
     c = fetch()
     releases = get_releases(c)
-    for r in releases:
-        print(r.readable())
 
 
 if __name__ == "__main__":

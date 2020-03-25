@@ -17,6 +17,9 @@ class Release:
     def get_chain(self):
         return self.chain
 
+    def get_version(self):
+        return self.version
+
 
 class Releases:
     """List of Release classes"""
@@ -41,6 +44,12 @@ class Releases:
         if chain not in chains:
             raise Exception("Unknown chain. Try 'print(list_branches())'")
         return [r for r in self.releases if r.chain == chain]
+
+    def get_chain_latest(self, chain='mainnet'):
+        if chain not in chains:
+            raise Exception("Unknown chain. Try 'print(list_branches())'")
+        candidates = [r for r in self.releases if r.chain == chain]
+        return [r for r in candidates if r.version == max([r.version for r in candidates])][0]
 
 
 all_releases = Releases()
@@ -103,6 +112,8 @@ def verify_string_format(strings):
 def main():
     c = fetch()
     releases = get_releases(c)
+    for r in releases:
+        print(r.readable())
 
 
 if __name__ == "__main__":

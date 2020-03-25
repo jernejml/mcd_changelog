@@ -1,2 +1,4 @@
 build wheel (to dist directory):
-python setup bdist_wheel
+python setup.py bdist_wheel
+cd dist
+pip install mcd_changelog-<...>.whl

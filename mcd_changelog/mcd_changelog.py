@@ -1,4 +1,5 @@
 import requests
+import json
 from bs4 import BeautifulSoup
 
 chains = ['mainnet', 'kovan', 'rinkeby', 'ropsten', 'goerli']
@@ -7,9 +8,10 @@ URL_CHANGELOG = "https://changelog.makerdao.com/"
 
 class Release:
     """release class: holds chain, like kovan, and versioning"""
-    def __init__(self, chain, version):
+    def __init__(self, chain, version, contracts=None):
         self.chain = chain
         self.version = version
+        self.contracts = contracts
 
     def readable(self):
         return self.chain + "/" + self.version
@@ -19,6 +21,9 @@ class Release:
 
     def get_version(self):
         return self.version
+
+    def get_contracts(self):
+        return self.contracts
 
 
 class Releases:
@@ -67,6 +72,14 @@ def fetch():
         raise e
 
 
+def fetch_contracts(url):
+    try:
+        response = requests.get(url)
+        return json.loads(response.content)
+    except requests.exceptions.RequestException as e:
+        raise e
+
+
 def parse_release_string(rels):
     for r in rels:
         result = r.split("/")
@@ -74,7 +87,12 @@ def parse_release_string(rels):
             verify_string_format(result)
         except Exception as e:
             raise e
-        rel = Release(result[2], result[3])
+        try:
+            contracts = fetch_contracts(URL_CHANGELOG + "releases/" + result[2] + "/" + result[3] + "/contracts.json")
+        except Exception as e:
+            raise e
+        rel = Release(result[2], result[3], contracts)
+
         all_releases.add_release(rel)
     return
 
@@ -112,8 +130,9 @@ def verify_string_format(strings):
 def main():
     c = fetch()
     releases = get_releases(c)
-    for r in releases:
-        print(r.readable())
+    r = releases.get_chain_latest("kovan")
+    contracts = r.get_contracts()
+    print(contracts["MCD_FLIP_ETH_A"])
 
 
 if __name__ == "__main__":

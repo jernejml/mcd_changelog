@@ -3,12 +3,12 @@ from setuptools import setup
 
 setup(
     name="mcd_changelog",
-    version="0.3.0",
+    version="0.4.0",
     description='parse mcd-changelog',
     long_description='Parse Maker\'s MCD changelog webpage',
     author="Jernej Mlakar",
     author_email="jernej.mlakar@gmail.com",
-    url="N/A",
+    url="https://github.com/jernejml/mcd_changelog",
     license="https://unlicense.org/",
     packages=['mcd_changelog'],
     install_requires=['requests', 'beautifulsoup4'],

@@ -1,4 +1,7 @@
+Parse releases at https://changelog.makerdao.com/
+
 - beta
+- dependent on webpage availability
 - dependent on maker devs not changing web page structure 
 - dependent on prompt webpage update after (new) releases
 - no verifying on-chain 

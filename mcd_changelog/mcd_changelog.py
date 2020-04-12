@@ -1,6 +1,9 @@
 import requests
 import json
+import tempfile
 from bs4 import BeautifulSoup
+from io import BytesIO
+from zipfile import ZipFile
 
 chains = ['mainnet', 'kovan', 'rinkeby', 'ropsten', 'goerli']
 URL_CHANGELOG = "https://changelog.makerdao.com/"
@@ -80,6 +83,41 @@ def fetch_contracts(url):
         raise e
 
 
+def download_abi_zip(chain, version):
+    # https://changelog.makerdao.com/releases/mainnet/1.0.4/abi/mainnet_abi_1.0.4.zip
+    # mainnet_abi_1.0.4.zip
+    #filename = url.split('/')[-1]
+    url = URL_CHANGELOG + "releases/" + chain + "/" + version + "/abi/" + chain + "_abi_" + version + ".zip"
+    try:
+        return requests.get(url)
+    except requests.exceptions.RequestException as e:
+        raise e
+
+    #with tempfile.TemporaryDirectory() as temp_directory:
+    #    filepath = temp_directory + '\\' + filename
+    #    print(filepath)
+    #    try:
+    #        response = requests.get(url)
+    #        with open(filepath, 'wb') as f:
+     #           f.write(response.content)
+     #   except requests.exceptions.RequestException as e:
+     #       raise e
+
+
+def unzip_downloaded_zip(response):
+    if response.status_code != 200:
+        if response.status_code == 404:
+            return None
+        raise Exception("Wow! Status code: " + str(response.status_code))
+    with ZipFile(BytesIO(response.content)) as my_zip_file:
+        ZipFile.testzip(my_zip_file)
+        for contained_file in my_zip_file.namelist():
+            if not contained_file.endswith('.abi'):
+                print("wow!")
+                print(contained_file)
+
+
+
 def parse_release_string(rels):
     for r in rels:
         result = r.split("/")
@@ -88,12 +126,17 @@ def parse_release_string(rels):
         except Exception as e:
             raise e
         try:
-            contracts = fetch_contracts(URL_CHANGELOG + "releases/" + result[2] + "/" + result[3] + "/contracts.json")
+            chain = result[2]
+            version = result[3]
+            contracts = fetch_contracts(URL_CHANGELOG + "releases/" + chain + "/" + version + "/contracts.json")
         except Exception as e:
             raise e
-        rel = Release(result[2], result[3], contracts)
+        rel = Release(chain, version, contracts)
 
         all_releases.add_release(rel)
+
+        response = download_abi_zip(chain, version)
+        unzip_downloaded_zip(response)
     return
 
 
@@ -130,7 +173,7 @@ def verify_string_format(strings):
 def main():
     c = fetch()
     releases = get_releases(c)
-    r = releases.get_chain_latest("kovan")
+    r = releases.get_chain_latest("mainnet")
     contracts = r.get_contracts()
     print(contracts["MCD_FLIP_ETH_A"])
 

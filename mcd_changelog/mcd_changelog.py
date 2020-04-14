@@ -108,17 +108,15 @@ def unzip_downloaded_zip(response):
     if response.status_code != 200:
         if response.status_code == 404:
             return None
-        raise Exception("Wow! Status code: " + str(response.status_code))
+        raise Exception("Failed to download abi zip file. Status code: " + str(response.status_code))
     with ZipFile(BytesIO(response.content)) as my_zip_file:
         ZipFile.testzip(my_zip_file)
         for contained_file in my_zip_file.namelist():
-            if not contained_file.endswith('.abi'):
-                print("wow!")
-                print(contained_file)
+            info = ZipFile.getinfo(my_zip_file, contained_file)
+            #ZipFile.extract(my_zip_file, ZipFile.getinfo(my_zip_file, contained_file))
 
 
-
-def parse_release_string(rels):
+def parse_releases(rels):
     for r in rels:
         result = r.split("/")
         try:
@@ -134,9 +132,11 @@ def parse_release_string(rels):
         rel = Release(chain, version, contracts)
 
         all_releases.add_release(rel)
-
-        response = download_abi_zip(chain, version)
-        unzip_downloaded_zip(response)
+        try:
+            response = download_abi_zip(chain, version)
+            unzip_downloaded_zip(response)
+        except Exception as e:
+            raise e
     return
 
 
@@ -147,7 +147,7 @@ def get_releases(c):
     for c in chains:
         rels = [x for x in releases if x.find(c) > 0]
         try:
-            parse_release_string(rels)
+            parse_releases(rels)
         except Exception as e:
             raise e
     return all_releases

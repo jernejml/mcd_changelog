@@ -1,6 +1,7 @@
 import requests
 import json
 import tempfile
+import os
 from bs4 import BeautifulSoup
 from io import BytesIO
 from zipfile import ZipFile
@@ -11,10 +12,11 @@ URL_CHANGELOG = "https://changelog.makerdao.com/"
 
 class Release:
     """release class: holds chain, like kovan, and versioning"""
-    def __init__(self, chain, version, contracts=None):
+    def __init__(self, chain, version, contracts=None, abipath=None):
         self.chain = chain
         self.version = version
         self.contracts = contracts
+        self.abipath = abipath
 
     def readable(self):
         return self.chain + "/" + self.version
@@ -89,9 +91,15 @@ def download_abi_zip(chain, version):
     #filename = url.split('/')[-1]
     url = URL_CHANGELOG + "releases/" + chain + "/" + version + "/abi/" + chain + "_abi_" + version + ".zip"
     try:
-        return requests.get(url)
+        response = requests.get(url)
     except requests.exceptions.RequestException as e:
         raise e
+    if response.status_code != 200:
+        if response.status_code == 404:
+            print("Nothing at: " + url)
+            return None
+        raise Exception("Failed to download abi zip file. Status code: " + str(response.status_code))
+    return response
 
     #with tempfile.TemporaryDirectory() as temp_directory:
     #    filepath = temp_directory + '\\' + filename
@@ -104,16 +112,12 @@ def download_abi_zip(chain, version):
      #       raise e
 
 
-def unzip_downloaded_zip(response):
-    if response.status_code != 200:
-        if response.status_code == 404:
-            return None
-        raise Exception("Failed to download abi zip file. Status code: " + str(response.status_code))
+def unzip_downloaded_zip(response, path):
     with ZipFile(BytesIO(response.content)) as my_zip_file:
         ZipFile.testzip(my_zip_file)
         for contained_file in my_zip_file.namelist():
             info = ZipFile.getinfo(my_zip_file, contained_file)
-            #ZipFile.extract(my_zip_file, ZipFile.getinfo(my_zip_file, contained_file))
+            ZipFile.extract(my_zip_file, info, path)
 
 
 def parse_releases(rels):
@@ -129,14 +133,15 @@ def parse_releases(rels):
             contracts = fetch_contracts(URL_CHANGELOG + "releases/" + chain + "/" + version + "/contracts.json")
         except Exception as e:
             raise e
-        rel = Release(chain, version, contracts)
-
-        all_releases.add_release(rel)
         try:
+            path = os.path.dirname(__file__) + '/abis/' + chain + '/' + version
             response = download_abi_zip(chain, version)
-            unzip_downloaded_zip(response)
+            if response is not None:
+                unzip_downloaded_zip(response, path)
         except Exception as e:
             raise e
+        release = Release(chain, version, contracts, path)
+        all_releases.add_release(release)
     return
 
 

@@ -24,14 +24,12 @@ pip install mcd_changelog-<...>.whl
 ```
 import mcd_changelog
 
-c = mcd_changelog.fetch()
-releases = mcd_changelog.get_releases(c)
-for r in releases:
-    print(r.readable())
-
-r = releases.get_chain_latest("kovan")
+mcd_changelog.fetch()
+releases = mcd_changelog.get_releases()
+r = releases.get_chain_latest("mainnet")
 contracts = r.get_contracts()
 print(contracts["MCD_FLIP_ETH_A"])
+print(r.get_abi("Flipper.abi"))
 ```
 
 

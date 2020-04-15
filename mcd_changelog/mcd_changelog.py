@@ -205,7 +205,7 @@ def main():
     r = releases.get_chain_latest("mainnet")
     contracts = r.get_contracts()
     print(contracts["MCD_FLIP_ETH_A"])
-    lolo = r.get_abi("Flipper.abi")
+    print(r.get_abi("Flipper.abi"))
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="mcd_changelog",
-    version="0.4.3",
+    version="0.4.4",
     description='parse mcd-changelog (BETA)',
     long_description='Parse Maker\'s MCD changelog webpage',
     author="Jernej Mlakar",

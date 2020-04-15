@@ -5,10 +5,10 @@ import pickle
 from bs4 import BeautifulSoup
 from io import BytesIO
 from zipfile import ZipFile
+from pathlib import Path
 
 chains = ['mainnet', 'kovan', 'rinkeby', 'ropsten', 'goerli']
 URL_CHANGELOG = "https://changelog.makerdao.com/"
-
 
 class Release:
     """release class: holds chain, like kovan, and versioning"""
@@ -32,6 +32,9 @@ class Release:
 
     def get_abi_path(self):
         return self.abipath
+
+    def get_abi(self, name):
+        return load_abi(self.abipath, name)
 
 
 class Releases:
@@ -65,7 +68,18 @@ class Releases:
         return [r for r in candidates if r.version == max([r.version for r in candidates])][0]
 
 
-all_releases = Releases()
+loaded_releases = Releases()
+
+
+def load_abi(path, name):
+    filename = None
+    for abi_path in Path(path).rglob('*.abi'):
+        filename = abi_path.absolute()
+        if abi_path.name == name:
+            break
+    if filename is not None:
+        with (open(filename, "r")) as openfile:
+            return openfile.read()
 
 
 def list_branches():
@@ -76,7 +90,8 @@ def load():
     filename = os.path.dirname(__file__) + '/releases.obj'
     try:
         with (open(filename, "rb")) as openfile:
-            return pickle.load(openfile)
+            loaded_releases = pickle.load(openfile)
+            return loaded_releases
     except pickle.UnpicklingError as e:
         print("unpickling error")
         return None
@@ -91,7 +106,7 @@ def load():
 def fetch():
     try:
         result = requests.get(URL_CHANGELOG)
-        return result.content
+        get_releases(result.content)
     except requests.exceptions.RequestException as e:
         raise e
 
@@ -149,7 +164,7 @@ def parse_releases(rels):
         except Exception as e:
             raise e
         release = Release(chain, version, contracts, path)
-        all_releases.add_release(release)
+        loaded_releases.add_release(release)
     return
 
 
@@ -163,7 +178,9 @@ def get_releases(c):
             parse_releases(rels)
         except Exception as e:
             raise e
-    return all_releases
+    filename = os.path.dirname(__file__) + '/releases.obj'
+    filehandler = open(filename, 'wb')
+    pickle.dump(loaded_releases, filehandler)
 
 
 def verify_string_format(strings):
@@ -185,15 +202,10 @@ def verify_string_format(strings):
 
 def main():
     releases = load()
-    if releases is None:
-        c = fetch()
-        releases = get_releases(c)
-        filename = os.path.dirname(__file__) + '/releases.obj'
-        filehandler = open(filename, 'wb')
-        pickle.dump(releases, filehandler)
     r = releases.get_chain_latest("mainnet")
     contracts = r.get_contracts()
     print(contracts["MCD_FLIP_ETH_A"])
+    lolo = r.get_abi("Flipper.abi")
 
 
 if __name__ == "__main__":

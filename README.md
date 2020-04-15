@@ -25,8 +25,7 @@ pip install mcd_changelog-<...>.whl
 import mcd_changelog
 
 mcd_changelog.fetch() # only first time
-mcd_changelog.load()
-releases = mcd_changelog.get_releases()
+releases = mcd_changelog.load()
 r = releases.get_chain_latest("mainnet")
 contracts = r.get_contracts()
 print(contracts["MCD_FLIP_ETH_A"])

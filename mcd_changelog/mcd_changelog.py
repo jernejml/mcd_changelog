@@ -1,7 +1,7 @@
 import requests
 import json
-import tempfile
 import os
+import pickle
 from bs4 import BeautifulSoup
 from io import BytesIO
 from zipfile import ZipFile
@@ -29,6 +29,9 @@ class Release:
 
     def get_contracts(self):
         return self.contracts
+
+    def get_abi_path(self):
+        return self.abipath
 
 
 class Releases:
@@ -69,6 +72,22 @@ def list_branches():
     return chains
 
 
+def load():
+    filename = os.path.dirname(__file__) + '/releases.obj'
+    try:
+        with (open(filename, "rb")) as openfile:
+            return pickle.load(openfile)
+    except pickle.UnpicklingError as e:
+        print("unpickling error")
+        return None
+    except (AttributeError, EOFError, ImportError, IndexError) as e:
+        print("todo")
+        return None
+    except FileNotFoundError:
+        print("\nFile " + filename + " does not exist?. Run  command.\n")
+    return None
+
+
 def fetch():
     try:
         result = requests.get(URL_CHANGELOG)
@@ -88,7 +107,6 @@ def fetch_contracts(url):
 def download_abi_zip(chain, version):
     # https://changelog.makerdao.com/releases/mainnet/1.0.4/abi/mainnet_abi_1.0.4.zip
     # mainnet_abi_1.0.4.zip
-    #filename = url.split('/')[-1]
     url = URL_CHANGELOG + "releases/" + chain + "/" + version + "/abi/" + chain + "_abi_" + version + ".zip"
     try:
         response = requests.get(url)
@@ -100,16 +118,6 @@ def download_abi_zip(chain, version):
             return None
         raise Exception("Failed to download abi zip file. Status code: " + str(response.status_code))
     return response
-
-    #with tempfile.TemporaryDirectory() as temp_directory:
-    #    filepath = temp_directory + '\\' + filename
-    #    print(filepath)
-    #    try:
-    #        response = requests.get(url)
-    #        with open(filepath, 'wb') as f:
-     #           f.write(response.content)
-     #   except requests.exceptions.RequestException as e:
-     #       raise e
 
 
 def unzip_downloaded_zip(response, path):
@@ -176,8 +184,13 @@ def verify_string_format(strings):
 
 
 def main():
-    c = fetch()
-    releases = get_releases(c)
+    releases = load()
+    if releases is None:
+        c = fetch()
+        releases = get_releases(c)
+        filename = os.path.dirname(__file__) + '/releases.obj'
+        filehandler = open(filename, 'wb')
+        pickle.dump(releases, filehandler)
     r = releases.get_chain_latest("mainnet")
     contracts = r.get_contracts()
     print(contracts["MCD_FLIP_ETH_A"])

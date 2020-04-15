@@ -22,9 +22,11 @@ pip install mcd_changelog-<...>.whl
 **usage:**
 
 ```
+# only first time or after new release is published
+sudo python -c 'import mcd_changelog;mcd_changelog.fetch();'
+
 import mcd_changelog
 
-mcd_changelog.fetch() # only first time
 releases = mcd_changelog.load()
 r = releases.get_chain_latest("mainnet")
 contracts = r.get_contracts()
